@@ -3,13 +3,14 @@
 """Crawl web page for building csv files containing flights info
  
 Usage:
-  flight_list.py <company> [--limit=<limit>]
+  flight_list.py <company> [--from=<from> --to=<to>]
  
 Options:
   -h --help     
   --version
   # -company=TODO
-  # --limit=TODO    
+  # --from=TODO    
+  # --to=TODO   
 """
 import os
 import re
@@ -22,7 +23,8 @@ separator = ";"
 url = "http://www.flightradar24.com/data/flights/"
 # company = "air-france-afr"
 # directory = company
-limit = 10;
+_from = 0;
+_to = 10
 
 # remove annoying characters
 chars = {
@@ -74,7 +76,7 @@ def parseRow(row):
     return [date, fromAirPort, toAirPort, replace(aircraft), std, atd, sta, replace(status)]
 
 def parseTable(data_flight, idTable):
-    response = urllib2.urlopen(url + data_flight + "/")
+    response = urllib2.urlopen(url + data_flight + "/") #may have some issues
     page_source = response.read()
     soup = BeautifulSoup(page_source)
     table = soup.find_all('table')
@@ -109,7 +111,10 @@ def writeInCsvFile(list_of_flights):
         with open(fileName, "w+") as f:
             matrix = parseTable(flight, "tblFlightData")
             for row in matrix:
-                f.write(separator.join(row))
+                try:
+                    f.write(separator.join(row))
+                except:
+                    print "Flight: #" + flight + " -- Unexpected error:", sys.exc_info()[0]
                 f.write('\n')
             f.close()
         print fileName + " created"
@@ -123,8 +128,10 @@ if __name__ == '__main__':
         company = arguments['<company>']
         directory = company
 
-        if arguments['--limit']:
-            limit = int(arguments['--limit'])
+        if arguments['--from']:
+            _from = int(arguments['--from'])
+        if arguments['--to']:
+            _to = int(arguments['--to'])
 
         response = urllib2.urlopen(url + company)
         page_source = response.read()
@@ -140,7 +147,7 @@ if __name__ == '__main__':
         if not os.path.exists(directory):
           os.makedirs(directory)
 
-        writeInCsvFile(list_of_flights[:limit])
+        writeInCsvFile(list_of_flights[_from:_to])
 
         print "... finished !"
     else:
